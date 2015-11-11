@@ -1,0 +1,304 @@
+<!;DOCTYPE; HTML>
+<!-- Written by Sebble -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>
+UBER HEXAGON
+</title>
+</head>
+<body bgcolor="red">
+<div align="center">
+<img src="hexagonlogo.png"></img><br><br>
+<canvas width="800" height="500" id="drawcanvas"></canvas><br><br>
+<audio id="deathaudio">
+	<source src="die.ogg" />
+</audio>
+<div id="cont" style="background:black; margin-left:10%; margin-right:10%; opacity:0.8;">
+	<br>
+	<font face = "Courier" color = "white">
+		<h3><strong>Left and right arrow keys to evade the walls, space to try again</strong></h3>
+		<p><strong>Note that only the <i>front</i> of a wall will kill you.</p>
+		<p><strong>Now with iOS and Android support!</strong> Touch anywhere on the left or right side in the gameview to move.</p>
+		<br><p>Press the up and down arrow keys for some variety</p><br>
+		<p>Similar mechanics to Terry Cavanagh's <a href="http://www.superhexagon.com">Super Hexagon</a><br> Definitely worth the money - I suggest you go buy it!</p>
+	</font>
+	<br>
+</div>
+</div>
+<script type="text/javascript">
+
+var WIDTH, HEIGHT, canvas, container, ctx;
+var OuterSize = 900;
+var InnerSize = 70;
+var NumFaces = 6;
+var angleDelta = Math.PI/(NumFaces/2);
+var segments = new Array();
+
+var LineSegment = function (lineface) {
+    this.position = lineface;
+    this.distance = 550;
+    this.width = 30;
+    this.collisionPerformed = false;
+}
+
+window.onload = function() {
+	WIDTH = 800;
+	HEIGHT = 500;
+	canvas = document.getElementById("drawcanvas");
+	canvas.addEventListener("touchstart", touchDown, false);
+	canvas.addEventListener("touchend", touchUp, false);
+	ctx = canvas.getContext("2d");
+	ctx.fillStyle = "rgb(0, 0, 0)";
+	ctx.fillRect(0, 0, WIDTH, HEIGHT);
+	ctx.stroke(); //Bypass bug in Chrome/FF for continued re-drawing
+}
+
+var isLeftDown = false, isRightDown = false;
+
+function touchDown(e) {
+	if(!e)
+		var e = event;
+	e.preventDefault();
+	
+	if( e.targetTouches[0].pageX - canvas.offsetLeft < WIDTH/2 )
+		isLeftDown = true;
+	else
+		isRightDown = true;
+}
+function touchUp() {
+	isRightDown = false;
+	isLeftDown = false;
+}
+
+var i = 0, viewDelta = 3;
+var timing = 0;
+var nextChange = 100;
+
+var playerSubangle = 0;
+var playerDead = false;
+var playerScore = 0;
+
+var isRed = true;
+
+
+function loop() {
+    ++timing; // Keep track of time
+    i += viewDelta; // Rotate view
+
+    angleDelta = Math.PI / (NumFaces / 2);
+
+    if (!playerDead) {
+		if(timing/60 > 20 && timing%56==0) {
+			if(isRed) document.body.style.background = "#FF8080";
+			else document.body.style.background = "#FF0000";
+			isRed = !isRed;
+		}
+		
+        playerScore = timing / 60;
+
+        ProcessLineSegments();
+        
+        if (timing % nextChange == 0) { // Change rotation velocity sometimes
+            viewDelta = Math.random() * 10 * timing/10000 - 5 * timing/5000;
+            nextChange = Math.floor(Math.random() * 50 + 25);
+        }
+    }
+ 
+    if(!playerDead) DoPlayerMovement();
+
+    DoPlayerCollision();
+	
+	DrawBackground();
+
+	DrawLineSegments();
+
+	DrawExit();
+
+	DrawPlayer();
+
+	if (playerDead) {
+		document.body.style.background = "#DC0200";
+	    viewDelta /= 1.05;
+	    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+	    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+	}
+
+	ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+	ctx.fillRect(0, 0, 105, 50);
+	ctx.fillStyle = "rgba(255, 255, 255, 1)";
+	ctx.font = "30px Courier";
+	ctx.fillText(playerScore.toFixed(2), 6, 35);
+}
+
+function DoPlayerMovement() {
+    if (isLeftDown)
+        playerSubangle -= 0.1;
+    else if (isRightDown)
+        playerSubangle += 0.1;
+
+}
+
+function PerpendicularDistance( x0, y0, x1, y1, px, py ) {
+    var normalLength = Math.sqrt( (x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0) );
+	var distance = ((px - x0) * (y1 - y0) - (py - y0) * (x1 - x0)) / normalLength;
+	return Math.abs(distance);
+}
+
+var playerDist = 83;
+var playerLength = 9;
+var playerTriSize = 0.09;
+
+function DoPlayerCollision() {
+    for (var j = 0; j < segments.length; j++) {
+        if ( true ) {
+
+            if( segments[j].distance - segments[j].width < 80 )
+                segments[j].collisionPerformed = true;
+
+            var angle = i / 100 + angleDelta * segments[j].position;
+
+            var px = WIDTH / 2 + Math.cos(playerSubangle + i/100) * playerDist;
+            var py = HEIGHT / 2 + Math.sin(playerSubangle + i / 100) * playerDist;
+            var x0 = WIDTH / 2 + Math.cos(angle + angleDelta) * (segments[j].distance - segments[j].width);
+            var y0 = HEIGHT / 2 + Math.sin(angle + angleDelta) * (segments[j].distance - segments[j].width);
+            var x1 = WIDTH / 2 + Math.cos(angle) * (segments[j].distance - segments[j].width);
+            var y1 = HEIGHT / 2 + Math.sin(angle) * (segments[j].distance - segments[j].width);
+
+            if ( PerpendicularDistance( x0, y0, x1, y1, px, py) <= 3 ) {
+                if (!segments[j].collisionPerformed) {
+                    playerDead = true;
+					document.getElementById("deathaudio").play();
+                }
+                segments[j].collisionPerformed = true;
+            }
+        }
+    }
+}
+
+function DrawPlayer() {
+    playerSubangle += i / 100;
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    ctx.beginPath();
+    ctx.moveTo(WIDTH / 2 + Math.cos(playerSubangle) * playerDist, HEIGHT / 2 + Math.sin(playerSubangle) * playerDist);
+    ctx.lineTo(WIDTH / 2 + Math.cos(playerSubangle + playerTriSize) * (playerDist - playerLength), HEIGHT / 2 + Math.sin(playerSubangle + playerTriSize) * (playerDist - playerLength));
+    ctx.lineTo(WIDTH / 2 + Math.cos(playerSubangle - playerTriSize) * (playerDist - playerLength), HEIGHT / 2 + Math.sin(playerSubangle - playerTriSize) * (playerDist - playerLength));
+    ctx.closePath();
+    ctx.fill();
+    playerSubangle -= i / 100;
+}
+
+function ProcessLineSegments() {
+	var interval = 0;
+	if( timing/60 < 45 ) interval = 45;
+	else interval = 35;
+    if (timing % interval == 0) {
+		var maxFaces = 0;
+		if( timing/60 < 5.0 ) maxFaces = 1;
+		else if( timing/60 < 10.0) maxFaces = 3;
+		else if( timing/60 < 15.0) maxFaces = 4;
+		else maxFaces = NumFaces - 1;
+		maxFaces = Math.min( NumFaces-1, maxFaces);
+		//maxFaces = Math.min(NumFaces-1, maxFaces);
+        for (var k = 0; k != maxFaces; ++k)
+            segments.push(new LineSegment(Math.floor(Math.random() * NumFaces)));
+    }
+
+    for (var j = 0; j < segments.length; j++) {
+         segments[j].distance -= 3;
+    }
+    for (var j = 0; j < segments.length; j++) {
+        if (segments[j].distance < 20) {
+            segments.splice(j, 1);
+            j = 0;
+        }
+    }
+}
+
+function DrawLineSegments() {
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    for (var j = 0; j < segments.length; j++) {
+        var angle = i / 100 + angleDelta * segments[j].position;
+        ctx.beginPath();
+        ctx.moveTo(WIDTH / 2 + Math.cos(angle) * segments[j].distance, HEIGHT / 2 + Math.sin(angle) * segments[j].distance);
+        ctx.lineTo(WIDTH / 2 + Math.cos(angle + angleDelta) * segments[j].distance, HEIGHT / 2 + Math.sin(angle + angleDelta) * segments[j].distance);
+        ctx.lineTo(WIDTH / 2 + Math.cos(angle + angleDelta) * (segments[j].distance - segments[j].width), HEIGHT / 2 + Math.sin(angle + angleDelta) * (segments[j].distance - segments[j].width));
+        ctx.lineTo(WIDTH / 2 + Math.cos(angle) * (segments[j].distance - segments[j].width), HEIGHT / 2 + Math.sin(angle) * (segments[j].distance - segments[j].width));
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+function DrawExit() {
+	var oldsz = InnerSize;
+	if(!playerDead) InnerSize += Math.sin((timing/28)*Math.PI*2)*5 + Math.cos(timing/3);
+	ctx.fillStyle = "rgba(0, 0, 0, 1)";
+	ctx.beginPath();
+	for( var angle = i/100;  angle < Math.PI*2+i/100; angle += angleDelta ) {
+		ctx.lineTo(WIDTH/2+Math.cos(angle)*InnerSize,HEIGHT/2+Math.sin(angle)*InnerSize);
+	}
+	ctx.closePath();
+	ctx.fill();
+	
+	ctx.beginPath();
+	ctx.strokeStyle = '#ffffff';
+	ctx.lineWidth = 3;
+	for( var angle = i/100;  angle < Math.PI*2+i/100; angle += angleDelta ) {
+		ctx.lineTo(WIDTH/2+Math.cos(angle+angleDelta)*InnerSize,HEIGHT/2+Math.sin(angle+angleDelta)*InnerSize);
+    }
+    ctx.closePath();
+    ctx.stroke();
+	
+	InnerSize = oldsz;
+}
+
+function DrawBackground() {
+	var index = 0;
+	for( var angle = i/100;  angle < Math.PI*2+i/100; angle += angleDelta ) {
+		if( ++index%2 )
+			ctx.fillStyle = "rgba(255, 128, 128, 1)";
+		else
+			ctx.fillStyle = "rgba(255, 0, 0, 1)";
+		ctx.beginPath();
+		ctx.moveTo(WIDTH/2, HEIGHT/2);
+		ctx.lineTo(WIDTH/2+Math.cos(angle)*OuterSize,HEIGHT/2+Math.sin(angle)*OuterSize);
+		ctx.lineTo(WIDTH/2+Math.cos(angle-angleDelta)*OuterSize,HEIGHT/2+Math.sin(angle-angleDelta)*OuterSize);
+		ctx.closePath();
+		ctx.fill();
+	}
+}
+
+document.onkeydown = function (e) {
+    var e = window.event || e;
+    if (e.keyCode == 37) {
+        isLeftDown = true;
+    } else if (e.keyCode == 39) {
+        isRightDown = true;
+    } else if (e.keyCode == 38) {
+        NumFaces += 1;
+		if (NumFaces > 10) NumFaces = 10;
+    } else if (e.keyCode == 40) {
+        NumFaces -= 1;
+        if (NumFaces < 3) NumFaces = 3;
+    } else if (e.keyCode == 32) { // Space to restart
+		segments = Array();
+		timing = 0;
+		playerDead = false;
+		document.body.style.background = "#FF0000";
+    }
+}
+
+document.onkeyup = function (e) {
+    var e = window.event || e;
+    if (e.keyCode == 37) {
+        isLeftDown = false;
+    } else if (e.keyCode == 39) {
+        isRightDown = false;
+    }
+}
+
+setInterval(loop, 1000/60);
+//Written by Subbler
+</script>
+</body>
+</html>
