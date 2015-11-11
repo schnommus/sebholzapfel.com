@@ -1,0 +1,24 @@
+# Do not remove this line, otherwise mod_rewrite rules will stop working
+RewriteBase /
+
+ErrorDocument 400 http://sebholzapfel.com/schnommus_legacy/site/404.html
+ErrorDocument 401 http://sebholzapfel.com/schnommus_legacy/site/404.html
+ErrorDocument 403 http://sebholzapfel.com/schnommus_legacy/site/404.html
+ErrorDocument 404 http://sebholzapfel.com/schnommus_legacy/site/404.html
+ErrorDocument 503 http://sebholzapfel.com/schnommus_legacy/site/404.html
+
+php_value post_max_size 20M
+php_value upload_max_filesize 20M
+php_value memory_limit 256M
+php_value max_execution_time 240
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress

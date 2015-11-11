@@ -1,0 +1,128 @@
+<!;DOCTYPE; HTML>
+<!-- Written by Sebble -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>
+HEPTAGAWN
+</title>
+</head>
+<body>
+<div align="center">
+<p>SUPER HEPTAGON</p>
+<canvas width="800" height="500" id="drawcanvas"></canvas>
+</div>
+<script type="text/javascript">
+
+var WIDTH, HEIGHT, canvas, container, ctx;
+var OuterSize = 900;
+var InnerSize = 70;
+var NumFaces = 6;
+var angleDelta = Math.PI/(NumFaces/2);
+var segments = new Array();
+
+var LineSegment = function( lineface )
+{
+	this.position = lineface;
+	this.distance = 900;
+	this.width = 30;
+}
+
+function init() {
+
+	WIDTH = 800;
+	HEIGHT = 500;
+	canvas = document.getElementById("drawcanvas");
+	ctx = canvas.getContext("2d");
+	ctx.fillStyle = "rgb(0, 0, 0)";
+	ctx.fillRect(0, 0, WIDTH, HEIGHT);
+	
+}
+
+var i = 3;
+
+function loop() {
+	//ctx.clearRect (0, 0, WIDTH, HEIGHT);
+	//if( i%300 == 0 ) NumFaces += 1;
+	if( i%30 == 0 ) {
+		for( var k = 0; k != 5; ++k )
+			segments.push( new LineSegment( Math.floor(Math.random()*NumFaces) ) );
+	}
+	
+	i += 3;
+	
+	DrawBackground();
+	
+	for (var j = 0; j < segments.length; j++) {
+		segments[j].distance -= 10;
+	}
+	for (var j = 0; j < segments.length; j++) {
+		if (segments[j].distance < 20) {
+			segments.splice(j, 1);
+			j=0;
+		}
+	}
+	
+	for (var j = 0; j < segments.length; j++) {
+		var angle = i/100+angleDelta*segments[j].position;
+		ctx.fillStyle = "rgba(255, 255, 255, 1)";
+		ctx.beginPath();
+		ctx.moveTo(WIDTH/2+Math.cos(angle)*segments[j].distance,HEIGHT/2+Math.sin(angle)*segments[j].distance);
+		ctx.lineTo(WIDTH/2+Math.cos(angle+angleDelta)*segments[j].distance,HEIGHT/2+Math.sin(angle+angleDelta)*segments[j].distance);
+		ctx.lineTo(WIDTH/2+Math.cos(angle+angleDelta)*(segments[j].distance-segments[j].width),HEIGHT/2+Math.sin(angle+angleDelta)*(segments[j].distance-segments[j].width));
+		ctx.lineTo(WIDTH/2+Math.cos(angle)*(segments[j].distance-segments[j].width),HEIGHT/2+Math.sin(angle)*(segments[j].distance-segments[j].width));
+		ctx.closePath();
+		ctx.fill();
+	}
+	//angleDelta = Math.PI/(NumFaces/2);
+	
+	
+	DrawExit();
+}
+
+function DrawExit() {
+	var oldsz = InnerSize;
+	InnerSize += Math.cos(i/5)+Math.sin(i/30);
+	ctx.fillStyle = "rgba(0, 0, 0, 1)";
+	ctx.beginPath();
+	for( var angle = i/100;  angle < Math.PI*2+i; angle += angleDelta ) {
+		ctx.lineTo(WIDTH/2+Math.cos(angle)*InnerSize,HEIGHT/2+Math.sin(angle)*InnerSize);
+		ctx.lineTo(WIDTH/2+Math.cos(angle+angleDelta)*InnerSize,HEIGHT/2+Math.sin(angle+angleDelta)*InnerSize);
+	}
+	//ctx.closePath();
+	ctx.fill();
+	
+	ctx.beginPath();
+	ctx.strokeStyle = '#ffffff';
+	ctx.lineWidth = 3;
+	for( var angle = i/100;  angle < Math.PI*2+i; angle += angleDelta ) {
+		ctx.lineTo(WIDTH/2+Math.cos(angle+angleDelta)*InnerSize,HEIGHT/2+Math.sin(angle+angleDelta)*InnerSize);
+	}
+	ctx.stroke();
+	//ctx.closePath();
+	
+	InnerSize = oldsz;
+}
+
+function DrawBackground() {
+	var index = 0;
+	for( var angle = i/100;  angle < Math.PI*2+i/100; angle += angleDelta ) {
+		if( ++index%2 )
+			ctx.fillStyle = "rgba(255, 128, 128, 1)";
+		else
+			ctx.fillStyle = "rgba(255, 0, 0, 1)";
+		ctx.beginPath();
+		ctx.moveTo(WIDTH/2, HEIGHT/2);
+		ctx.lineTo(WIDTH/2+Math.cos(angle)*OuterSize,HEIGHT/2+Math.sin(angle)*OuterSize);
+		ctx.lineTo(WIDTH/2+Math.cos(angle-angleDelta)*OuterSize,HEIGHT/2+Math.sin(angle-angleDelta)*OuterSize);
+		ctx.closePath();
+		ctx.fill();
+	}
+}
+
+init();
+setInterval(loop, 1000/30);
+//Written by Subbler
+</script>
+</body>
+</html>
