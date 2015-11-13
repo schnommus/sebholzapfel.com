@@ -30,17 +30,48 @@
         {{/foreach}}
 
     <script type="text/javascript">
-        var delta = 2*3.14159 / $(".randomly-place").length;
-        var angle = delta;
-        $(".randomly-place").each( function() {
-            var pos_x = 'calc(' + (Math.cos(angle)*30+50) + '% - 175px)';
-            var pos_y = 'calc(' + (Math.sin(angle)*40+50) + '% - 100px)';
-            $(this).css({ 'left': pos_x, 'top': pos_y });
-            /*
-            $(this).animate({left: "+=" + (2000-pos_x)}, 15000+Math.random()*10000, function(){$(this).css({left: -400*Math.random()+'px'}) } );
-            */
-            angle += delta;
-        });
+
+        function placeall( less, delt, len ) {
+            var delta = 2*3.14159 / ( $(".randomly-place").length + less );
+            var angle = delta * delt;
+            $(".randomly-place").each( function() {
+                var pos_x = 'calc(' + (Math.cos(angle)*30*len+50) + '% - 175px)';
+                var pos_y = 'calc(' + (Math.sin(angle)*40*len+50) + '% - 100px)';
+                $(this).css({ 'left': pos_x, 'top': pos_y });
+                /*
+                $(this).animate({left: "+=" + (2000-pos_x)}, 15000+Math.random()*10000, function(){$(this).css({left: -400*Math.random()+'px'}) } );
+                */
+                angle += delta;
+            });
+       }
+       
+        function arrange() {
+
+
+            if( $(window).width() > 1450 && $(window).height() > 750 ) {
+                $(".randomly-place").show();
+                placeall(0, 1, 1);
+            } else if( $(window).width() > 910 )  {
+                $(".randomly-place").show();
+                placeall(-2, 0.5, 1.2);
+            } else if( $(window).width() > 560 ) {
+                $(".randomly-place").hide();
+            } else {
+                $(".randomly-place").hide();
+                /*
+                $("#wrap").css({width: "none", margin: "none"});
+                $("#left_col").css({float: "none", width: "none"});
+                $("#right_col").css({float: "none", width: "none"});
+                */
+            }
+        }
+
+        $(".randomly-place").hide();
+
+        $(window).resize( function() {
+           arrange();
+        } );
+
     </script>
 
 
@@ -111,6 +142,7 @@
         window.onload = function() {
             //$(".main-header-content").hide();
             //$(".main-header-content").fadeIn('slow');
+            arrange();
         }
 
     </script>
